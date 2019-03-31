@@ -1,0 +1,59 @@
+body
+{
+	background-color: #e0e0e0;
+}
+
+.power-container small
+{
+	color: #808080;
+}
+
+.page-footer
+{
+	font-size: 0.5rem;
+}
+
+.button-spacer
+{
+	height: 1.2rem;
+}
+
+.button-container
+{
+	text-align: center;
+}
+
+.align-to-bottom
+{
+	position: absolute;
+	bottom: -0.5rem;
+	left: 0rem;
+	width: 100%;
+	margin-top: 1rem;
+}
+
+.power-name > .badge
+{
+	float: right;
+}
+
+.power-level-add
+{
+	padding-right: 0.5rem;
+	font-size: 0.8rem;
+}
+
+.power-level-add > .levels
+{
+	position: absolute;
+	margin-top: 1rem;
+	bottom: 1.2rem;
+	left: 50%;
+	width: 50%;
+	transform: translate(-50%, 0);
+}
+
+.power-level-add > button
+{
+	float: right;
+}
