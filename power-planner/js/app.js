@@ -17,14 +17,41 @@ String.prototype.formatUnicorn = String.prototype.formatUnicorn || function () {
     return str;
 };
 
+// sub-element sorting function
+function sortUsingNestedText(parent, childSelector, keySelector) {
+    var items = parent.children(childSelector).sort(function(a, b) {
+        var vA = $(keySelector, a).text();
+        var vB = $(keySelector, b).text();
+        return (vA < vB) ? -1 : (vA > vB) ? 1 : 0;
+    });
+    parent.append(items);
+};
+
+function sortReverseUsingNestedText(parent, childSelector, keySelector) {
+    var items = parent.children(childSelector).sort(function(a, b) {
+        var vA = $(keySelector, a).text();
+        var vB = $(keySelector, b).text();
+        return (vA < vB) ? 1 : (vA > vB) ? -1 : 0;
+    });
+    parent.append(items);
+};
+
 // globals
+var creepClass = "";
 var creepLevel = 0;
 
 // callback to populate powers for selected class 
 function populatePowers(powerClass)
 {
 	$("#powers-wrapper").empty();
+	$("#powers-selected-list").empty();
+	$("#powers-history-list").empty();
 	
+	// save values
+	creepClass = powerClass;
+	creepLevel = 0;
+	
+	// re-populate powers
 	for (var power in POWER_INFO)
 	{
 		if (!POWER_INFO[power] || !POWER_INFO[power].className || POWER_INFO[power].className != powerClass)
@@ -133,7 +160,7 @@ function addPower(id, info, description)
 	var subdiv = $("<div/>").addClass("callout small").attr("data-equalizer-watch", "bar").attr("data-toggle", "power-info-"+id);
 	
 	// name and description
-	var badge = $("<span>0</span>").attr("id", "power-badge-"+id).addClass("badge");
+	var badge = $("<span>0</span>").attr("id", "power-badge-"+id).addClass("badge secondary");
 	
 	subdiv.append($("<h6/>").addClass("power-name").append(description.name).append(badge).append($("<br/>")).append($("<small/>").append(formatPowerEffect(id, info, description.text))));
 	
@@ -141,7 +168,7 @@ function addPower(id, info, description)
 	var levels = $("<div/>").addClass("levels").append(formatMultiValue(info.level));
 	
 	// buttons aligned to bottom
-	var button = $("<button onclick=\"levelPower("+id+");\" />").addClass("button tiny").append("+");
+	var button = $("<button onclick=\"levelPower("+id+");\" />").addClass("button tiny").attr("id", "power-button-"+id).append("+");
 	
 	if (creepLevel >= POWER_CREEP_MAX_LEVEL)
 		button.addClass("secondary disabled");
@@ -160,6 +187,147 @@ function addPower(id, info, description)
 	
 	// put the whole thing in
 	$("#powers-wrapper").append(div);
+}
+
+// level the power up and update all the things
+function levelPower(id)
+{
+	var powerBlock = $("#power-info-"+id);
+	if (!powerBlock.length)
+		return;
+	
+	var powerBadge = $("#power-badge-"+id);
+	if (!powerBadge.length)
+		return;
+	
+	var powerInfo = POWER_INFO[id];
+	if (!powerInfo)
+		return;
+	
+	// level checks
+	var currentLevel = parseInt(powerBadge.text());
+	var nextLevel = currentLevel+1;
+	
+	if (currentLevel > powerInfo.level.length || powerInfo.level[currentLevel] > creepLevel)
+		return;
+	
+	// update the badge
+	powerBadge.empty();
+	powerBadge.append(nextLevel);
+	powerBadge.removeClass("success warning secondary");
+	
+	if (nextLevel >= powerInfo.level.length)
+		powerBadge.addClass("warning");
+	else
+		powerBadge.addClass("success");
+	
+	// update the internal counters and power button availability
+	levelUpCreep();
+	updatePowerUpgradeButtons();
+	
+	// add power to sidebar and update the overall list
+	addUpdatePowerToSidebarList(id, nextLevel, powerInfo);
+	addPowerToSidebarHistory(id, nextLevel, powerInfo);
+}
+
+// add selected power to the sidebar
+function addPowerToSidebarHistory(id, level, info)
+{
+	var powerSidebar = $("#powers-history-list");
+	if (!powerSidebar.length)
+		return;
+	
+	var desc = POWER_DESCRIPTIONS[id];
+	if (!desc)
+		return;
+	
+	powerSidebar.append($("<h6/>").addClass("power-item").attr("id", "powers-history-item-"+creepLevel).append(desc.name).append(" ").append($("<small/>").append("Lv. "+level)));
+}
+
+function addUpdatePowerToSidebarList(id, level, info)
+{
+	var powerSelectedList = $("#powers-selected-list");
+	if (!powerSelectedList.length)
+		return;
+	
+	var desc = POWER_DESCRIPTIONS[id];
+	if (!desc)
+		return;
+	
+	var powersItem = $("#powers-selected-item-"+id);
+	if (powersItem.length)
+	{
+		var powersItemLevel = $("small", powersItem);
+		
+		powersItemLevel.empty();
+		powersItemLevel.append("Lv. "+level);
+	}
+	else
+		powerSelectedList.append($("<h6/>").addClass("power-item").attr("id", "powers-selected-item-"+id).append(desc.name).append(" ").append($("<small/>").append("Lv. "+level)));
+	
+	sortReverseUsingNestedText(powerSelectedList, "h6", "small");
+}
+
+// level internal creep level counter and update the badges
+function levelUpCreep()
+{
+	var levelDisplay = $("#display-level");
+	if (!levelDisplay)
+		return;
+	
+	var hitsDisplay = $("#display-hits");
+	if (!hitsDisplay)
+		return;
+	
+	var carryDisplay = $("#display-carry");
+	if (!carryDisplay)
+		return;
+	
+	creepLevel++;
+	
+	levelDisplay.empty();
+	levelDisplay.append(creepLevel);
+	
+	hitsDisplay.empty();
+	hitsDisplay.append((creepLevel+1)*1000);
+	
+	carryDisplay.empty();
+	carryDisplay.append((creepLevel+1)*100);
+}
+
+// update the power upgrade buttons
+function updatePowerUpgradeButtons()
+{
+	for (var power in POWER_INFO)
+	{
+		if (!POWER_INFO[power] || !POWER_INFO[power].className || POWER_INFO[power].className != creepClass)
+			continue;
+		
+		enableDisableUpgradeButton(power, POWER_INFO[power]);
+	}
+}
+
+// enable/disable the power upgrade button for power id
+function enableDisableUpgradeButton(id, info)
+{
+	var powerButton = $("#power-button-"+id);
+	if (!powerButton.length)
+		return;
+	
+	var powerBadge = $("#power-badge-"+id);
+	if (!powerBadge.length)
+		return;
+	
+	var nextLevel = parseInt(powerBadge.text());
+	
+	powerButton.removeClass("success alert secondary disabled");
+	
+	if (creepLevel >= POWER_CREEP_MAX_LEVEL || nextLevel >= info.level.length)
+		powerButton.addClass("secondary disabled");
+	else if (info.level[nextLevel] > creepLevel)
+		powerButton.addClass("alert disabled");
+	else
+		powerButton.addClass("success");
 }
 
 // initialize stuff

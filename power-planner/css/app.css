@@ -3,7 +3,14 @@ body
 	background-color: #e0e0e0;
 }
 
-.power-container small
+.power-item
+{
+	
+}
+
+.power-container small,
+.power-creep-info small,
+.power-item small
 {
 	color: #808080;
 }
@@ -56,4 +63,9 @@ body
 .power-level-add > button
 {
 	float: right;
+}
+
+#powers-selected-container hr
+{
+	margin-bottom: 0.5rem;
 }

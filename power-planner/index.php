@@ -46,13 +46,15 @@ define('VERSION_STRING', "v0.1")
 				</div>
 				<div id="powers-selected-container" class="large-6 cell text-center">
 					<div class="callout" data-equalizer-watch="foo">
-						<h6>
+						<h6 class="power-creep-info">
 							Lv.: <small id="display-level">0</small> / Hits: <small id="display-hits">1000</small> / Carry: <small id="display-carry">100</small>
 						</h6>
 						<hr />
-						<div>Selected Powers</div>
+						<h6><u>Selected Powers</u></h6>
+						<div id="powers-selected-list"></div>
 						<hr />
-						<div>Order</div>
+						<h6><u>Pick Order</u></h6>
+						<div id="powers-history-list"></div>
 					</div>
 				</div>
 			</div>
