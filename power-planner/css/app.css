@@ -39,11 +39,6 @@ body
 	margin-top: 1rem;
 }
 
-.power-name > .badge
-{
-	float: right;
-}
-
 .power-level-add
 {
 	padding-right: 0.5rem;
@@ -58,11 +53,6 @@ body
 	left: 50%;
 	width: 50%;
 	transform: translate(-50%, 0);
-}
-
-.power-level-add > button
-{
-	float: right;
 }
 
 #powers-selected-container hr

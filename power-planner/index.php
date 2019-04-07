@@ -53,7 +53,10 @@ define('VERSION_STRING', "v0.1")
 						<h6><u>Selected Powers</u></h6>
 						<div id="powers-selected-list"></div>
 						<hr />
-						<h6><u>Pick Order</u></h6>
+						<h6 data-toggle="powers-copy-list"><u>Pick Order</u></h6>
+						<div id="powers-copy-list" class="dropdown-pane" data-dropdown data-position="bottom" data-alignment="center" data-auto-focus="true">
+							<textarea id="powers-copy-area" onfocus="this.select();" rows="4">[]</textarea>
+						</div>
 						<div id="powers-history-list"></div>
 					</div>
 				</div>

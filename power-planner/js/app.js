@@ -39,6 +39,7 @@ function sortReverseUsingNestedText(parent, childSelector, keySelector) {
 // globals
 var creepClass = "";
 var creepLevel = 0;
+var powerHistory = [];
 
 // callback to populate powers for selected class 
 function populatePowers(powerClass)
@@ -160,7 +161,7 @@ function addPower(id, info, description)
 	var subdiv = $("<div/>").addClass("callout small").attr("data-equalizer-watch", "bar").attr("data-toggle", "power-info-"+id);
 	
 	// name and description
-	var badge = $("<span>0</span>").attr("id", "power-badge-"+id).addClass("badge secondary");
+	var badge = $("<span>0</span>").attr("id", "power-badge-"+id).addClass("badge secondary float-right");
 	
 	subdiv.append($("<h6/>").addClass("power-name").append(description.name).append(badge).append($("<br/>")).append($("<small/>").append(formatPowerEffect(id, info, description.text))));
 	
@@ -168,7 +169,7 @@ function addPower(id, info, description)
 	var levels = $("<div/>").addClass("levels").append(formatMultiValue(info.level));
 	
 	// buttons aligned to bottom
-	var button = $("<button onclick=\"levelPower("+id+");\" />").addClass("button tiny").attr("id", "power-button-"+id).append("+");
+	var button = $("<button onclick=\"levelPower("+id+");\" />").addClass("button tiny float-right").attr("id", "power-button-"+id).append("+");
 	
 	if (creepLevel >= POWER_CREEP_MAX_LEVEL)
 		button.addClass("secondary disabled");
@@ -212,26 +213,25 @@ function levelPower(id)
 		return;
 	
 	// update the badge
-	powerBadge.empty();
-	powerBadge.append(nextLevel);
-	powerBadge.removeClass("success warning secondary");
+	updatePowerBadge(powerBadge, nextLevel, powerInfo.level.length);
 	
-	if (nextLevel >= powerInfo.level.length)
-		powerBadge.addClass("warning");
-	else
-		powerBadge.addClass("success");
+	// save to history
+	powerHistory.push(id);
 	
 	// update the internal counters and power button availability
-	levelUpCreep();
+	creepLevel++;
+	updateCreepStats();
 	updatePowerUpgradeButtons();
 	
 	// add power to sidebar and update the overall list
-	addUpdatePowerToSidebarList(id, nextLevel, powerInfo);
-	addPowerToSidebarHistory(id, nextLevel, powerInfo);
+	addUpdatePowerToSidebarList(id, nextLevel);
+	addPowerToSidebarHistory(id, nextLevel);
+	updatePowersCopyArea();
+	addMoveUndoButton();
 }
 
 // add selected power to the sidebar
-function addPowerToSidebarHistory(id, level, info)
+function addPowerToSidebarHistory(id, level)
 {
 	var powerSidebar = $("#powers-history-list");
 	if (!powerSidebar.length)
@@ -244,7 +244,17 @@ function addPowerToSidebarHistory(id, level, info)
 	powerSidebar.append($("<h6/>").addClass("power-item").attr("id", "powers-history-item-"+creepLevel).append(desc.name).append(" ").append($("<small/>").append("Lv. "+level)));
 }
 
-function addUpdatePowerToSidebarList(id, level, info)
+// remove selected power from the sidebar
+function removePowerFromSidebarHistory(level)
+{
+	var powerItem = $("#powers-history-item-"+level);
+	if (!powerItem.length)
+		return;
+	
+	powerItem.remove();
+}
+
+function addUpdatePowerToSidebarList(id, level)
 {
 	var powerSelectedList = $("#powers-selected-list");
 	if (!powerSelectedList.length)
@@ -257,10 +267,15 @@ function addUpdatePowerToSidebarList(id, level, info)
 	var powersItem = $("#powers-selected-item-"+id);
 	if (powersItem.length)
 	{
-		var powersItemLevel = $("small", powersItem);
-		
-		powersItemLevel.empty();
-		powersItemLevel.append("Lv. "+level);
+		if (level > 0)
+		{
+			var powersItemLevel = $("small", powersItem);
+			
+			powersItemLevel.empty();
+			powersItemLevel.append("Lv. "+level);
+		}
+		else
+			powersItem.remove();
 	}
 	else
 		powerSelectedList.append($("<h6/>").addClass("power-item").attr("id", "powers-selected-item-"+id).append(desc.name).append(" ").append($("<small/>").append("Lv. "+level)));
@@ -268,8 +283,67 @@ function addUpdatePowerToSidebarList(id, level, info)
 	sortReverseUsingNestedText(powerSelectedList, "h6", "small");
 }
 
-// level internal creep level counter and update the badges
-function levelUpCreep()
+function updatePowersCopyArea()
+{
+	$("#powers-copy-area").empty().append(JSON.stringify(powerHistory));
+}
+
+function addMoveUndoButton()
+{
+	var button = $("#power-undo-button");
+	
+	if (button.length < 1)
+		button = $("<div/>").attr("id", "power-undo-button").append("&nbsp;").append($("<button onclick=\"undoLevelPower();\" />").addClass("button tiny float-right").append("&#x293E;"));
+	
+	$("#powers-history-list").append(button);
+}
+
+function removeUndoButton()
+{
+	var button = $("#power-undo-button");
+	
+	if (button.length)
+		button.remove();
+}
+
+function undoLevelPower()
+{
+	// what's on history
+	var lastPower = powerHistory.pop();
+	
+	var powerBadge = $("#power-badge-"+lastPower);
+	if (!powerBadge.length)
+		return;
+	
+	var powerInfo = POWER_INFO[lastPower];
+	if (!powerInfo)
+		return;
+	
+	// level checks
+	var currentLevel = parseInt(powerBadge.text());
+	var nextLevel = currentLevel-1;
+	
+	// update the badge
+	updatePowerBadge(powerBadge, nextLevel, powerInfo.level.length);
+	
+	// remove power from sidebar and update overall list
+	removePowerFromSidebarHistory(creepLevel);
+	addUpdatePowerToSidebarList(lastPower, nextLevel);
+	
+	// update the internal counters and power button availability
+	creepLevel--;
+	updateCreepStats();
+	updatePowerUpgradeButtons();
+	
+	// add power to sidebar and update the overall list
+	updatePowersCopyArea();
+	
+	if (creepLevel < 1)
+		removeUndoButton();
+}
+
+// update the badges for creep level and stats
+function updateCreepStats()
 {
 	var levelDisplay = $("#display-level");
 	if (!levelDisplay)
@@ -283,8 +357,6 @@ function levelUpCreep()
 	if (!carryDisplay)
 		return;
 	
-	creepLevel++;
-	
 	levelDisplay.empty();
 	levelDisplay.append(creepLevel);
 	
@@ -293,6 +365,7 @@ function levelUpCreep()
 	
 	carryDisplay.empty();
 	carryDisplay.append((creepLevel+1)*100);
+	
 }
 
 // update the power upgrade buttons
@@ -305,6 +378,21 @@ function updatePowerUpgradeButtons()
 		
 		enableDisableUpgradeButton(power, POWER_INFO[power]);
 	}
+}
+
+// update the power badge
+function updatePowerBadge(powerBadge, nextLevel, maxLevel)
+{
+	powerBadge.empty();
+	powerBadge.append(nextLevel);
+	powerBadge.removeClass("success warning secondary");
+	
+	if (nextLevel < 1)
+		powerBadge.addClass("secondary");
+	else if (nextLevel >= maxLevel)
+		powerBadge.addClass("warning");
+	else
+		powerBadge.addClass("success");
 }
 
 // enable/disable the power upgrade button for power id
