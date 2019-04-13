@@ -227,7 +227,7 @@ function levelPower(id)
 	addUpdatePowerToSidebarList(id, nextLevel);
 	addPowerToSidebarHistory(id, nextLevel);
 	updatePowersCopyArea();
-	addMoveUndoButton();
+	updateUndoButton();
 }
 
 // add selected power to the sidebar
@@ -285,7 +285,7 @@ function addUpdatePowerToSidebarList(id, level)
 
 function updatePowersCopyArea()
 {
-	$("#powers-copy-area").empty().append(JSON.stringify(powerHistory));
+	$("#powers-copy-area").val(JSON.stringify(powerHistory));
 }
 
 function addMoveUndoButton()
@@ -296,6 +296,19 @@ function addMoveUndoButton()
 		button = $("<div/>").attr("id", "power-undo-button").append("&nbsp;").append($("<button onclick=\"undoLevelPower();\" />").addClass("button tiny float-right").append("&#x293E;"));
 	
 	$("#powers-history-list").append(button);
+}
+
+function updateUndoButton()
+{
+	var button = $("#power-undo-static");
+	
+	if (button.length < 1)
+		return;
+	
+	button.removeClass("disabled");
+	
+	if (creepLevel < 1)
+		button.addClass("disabled");
 }
 
 function removeUndoButton()
@@ -337,9 +350,7 @@ function undoLevelPower()
 	
 	// add power to sidebar and update the overall list
 	updatePowersCopyArea();
-	
-	if (creepLevel < 1)
-		removeUndoButton();
+	updateUndoButton();
 }
 
 // update the badges for creep level and stats
@@ -418,9 +429,90 @@ function enableDisableUpgradeButton(id, info)
 		powerButton.addClass("success");
 }
 
+// reset all current selection data
+function resetPowerProgress()
+{
+	// reset creep's levels
+	creepLevel = 0;
+	powerHistory.length = 0;
+	
+	$("#powers-history-list").empty();
+	$("#powers-selected-list").empty();
+	
+	// re-populate powers
+	for (var power in POWER_INFO)
+	{
+		if (!POWER_INFO[power] || !POWER_INFO[power].className || POWER_INFO[power].className != creepClass)
+			continue;
+	
+		var powerBadge = $("#power-badge-"+power);
+		if (!powerBadge.length)
+			continue;
+		
+		// update the badge
+		updatePowerBadge(powerBadge, 0, POWER_INFO[power].level.length);
+		enableDisableUpgradeButton(power, POWER_INFO[power]);
+	}
+	
+	updateCreepStats();
+	updatePowersCopyArea();
+	updateUndoButton();
+}
+
+// process specific power
+function processPowerUpgrade(power)
+{
+	levelPower(power);
+}
+
+// process power upgrade path
+function processPowersUpgradeArray(powers)
+{
+	// reset all data
+	resetPowerProgress();
+	
+	// process powers
+	for (var i = 0; i < powers.length; i++)
+		processPowerUpgrade(powers[i]);
+}
+
+// pick order field changed
+function pickOrderUpdate()
+{
+	var powerArea = $("#powers-copy-area");
+	if (!powerArea.length)
+		return;
+	
+	var powers = JSON.parse(powerArea.val());
+	
+	if (powers)
+		processPowersUpgradeArray(powers);
+}
+
+// set up powers from saved parameter
+function processPowersParameter(parameter)
+{
+	var powers = parameter.split && parameter.split(",");
+	
+	if (!powers || !powers.length)
+		return;
+	
+	for (var i = 0; i < powers.length; i++)
+		processPowerUpgrade(parseInt(powers[i]));
+}
+
+// generate share link
+function updateShareLink()
+{
+	window.history.replaceState(powerHistory, 'Powers Share', '?p='+powerHistory);
+}
+
 // initialize stuff
 $(document).foundation();
 $(window).on('load', function()
 {
 	populatePowers("operator");
+	
+	if (powersParam && powersParam.length)
+		processPowersParameter(powersParam);
 });
