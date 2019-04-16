@@ -11,7 +11,7 @@ define('VERSION_STRING', "v0.5");
 
 $powersParam = "";
 $valid = true;
-if ($_REQUEST['p'] && strlen($_REQUEST['p']) > 0)
+if (isset($_REQUEST['p']) && strlen($_REQUEST['p']) > 0)
 {
 	$parts = explode(",", $_REQUEST['p']);
 	
