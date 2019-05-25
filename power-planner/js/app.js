@@ -169,6 +169,7 @@ function addPower(id, info, description)
 	var levels = $("<div/>").addClass("levels").append(formatMultiValue(info.level));
 	
 	// buttons aligned to bottom
+	var undo = $("<button onclick=\"undoLevelPower();\" />").addClass("button tiny float-left").attr("id", "power-undo-"+id).append("&#x293E;");
 	var button = $("<button onclick=\"levelPower("+id+");\" />").addClass("button tiny float-right").attr("id", "power-button-"+id).append("+");
 	
 	if (creepLevel >= POWER_CREEP_MAX_LEVEL)
@@ -178,8 +179,11 @@ function addPower(id, info, description)
 	else
 		button.addClass("success");
 	
+	if (creepLevel == 0)
+		undo.addClass("disabled");
+	
 	subdiv.append($("<div/>").addClass("button-spacer").append("&nbsp;"));
-	subdiv.append($("<div/>").addClass("button-container align-to-bottom power-level-add").append(levels).append(button));
+	subdiv.append($("<div/>").addClass("button-container align-to-bottom power-level-add").append(levels).append(undo).append(button));
 	
 	div.append(subdiv);
 	
@@ -227,7 +231,7 @@ function levelPower(id)
 	addUpdatePowerToSidebarList(id, nextLevel);
 	addPowerToSidebarHistory(id, nextLevel);
 	updatePowersCopyArea();
-	updateUndoButton();
+	updatePowerUndoButtons();
 }
 
 // add selected power to the sidebar
@@ -298,17 +302,17 @@ function addMoveUndoButton()
 	$("#powers-history-list").append(button);
 }
 
-function updateUndoButton()
+function updatePowerUndoButtons()
 {
-	var button = $("#power-undo-static");
+	var buttons = $("[id^=power-undo-]");
 	
-	if (button.length < 1)
+	if (buttons.length < 1)
 		return;
 	
-	button.removeClass("disabled");
+	buttons.removeClass("disabled");
 	
 	if (creepLevel < 1)
-		button.addClass("disabled");
+		buttons.addClass("disabled");
 }
 
 function removeUndoButton()
@@ -350,7 +354,7 @@ function undoLevelPower()
 	
 	// add power to sidebar and update the overall list
 	updatePowersCopyArea();
-	updateUndoButton();
+	updatePowerUndoButtons();
 }
 
 // update the badges for creep level and stats
@@ -456,7 +460,7 @@ function resetPowerProgress()
 	
 	updateCreepStats();
 	updatePowersCopyArea();
-	updateUndoButton();
+	updatePowerUndoButtons();
 }
 
 // process specific power

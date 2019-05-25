@@ -7,7 +7,7 @@
  * Screeps Power Planner for Power Creeps
  */
 
-define('VERSION_STRING', "v0.5");
+define('VERSION_STRING', "v0.6");
 
 $powersParam = "";
 $valid = true;
